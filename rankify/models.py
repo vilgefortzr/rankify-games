@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Game(models.Model):
-    steam_id = models.IntegerField(unique=True)
+    steam_id = models.PositiveIntegerField(unique=True)
     title = models.CharField(max_length=200, blank=True)
     img_url = models.CharField(max_length=300, blank=True)
 
@@ -43,7 +43,7 @@ class Collection(models.Model):
 class CollectionGame(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name='collection_games')
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    votes = models.IntegerField(default=0)
+    votes = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["collection", "game"], name='unique_game')]
