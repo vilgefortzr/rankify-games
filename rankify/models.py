@@ -43,7 +43,12 @@ class Collection(models.Model):
 class CollectionGame(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name='collection_games')
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    votes = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["collection", "game"], name='unique_game')]
+
+
+class Vote(models.Model):
+    collection_game = models.ForeignKey(CollectionGame, on_delete=models.CASCADE)
+    # TODO: User
+
