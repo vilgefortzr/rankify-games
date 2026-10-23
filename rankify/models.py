@@ -47,8 +47,14 @@ class CollectionGame(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["collection", "game"], name='unique_game')]
 
+    def __str__(self):
+        return f"{self.game} -> {self.collection}"
+
 
 class Vote(models.Model):
     collection_game = models.ForeignKey(CollectionGame, on_delete=models.CASCADE)
     # TODO: User
+
+    def __str__(self):
+        return f"Vote for {self.collection_game}"
 
