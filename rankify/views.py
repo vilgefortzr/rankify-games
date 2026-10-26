@@ -9,10 +9,19 @@ from django.db.models import Count, Prefetch
 
 class CollectionListView(APIView):
     def get(self, request):
-        collections = Collection.objects.annotate(
+        games = (
+            CollectionGame.objects
+            .select_related("game")
+            .annotate(votes_count=Count("votes"))
+            .order_by("-votes_count", "game__title")
+        )
+        collections = (Collection.objects.annotate(
             total_votes=Count("collection_games__votes", distinct=True),
             games_count=Count("collection_games", distinct=True)
-        ).order_by("-total_votes")
+        ).prefetch_related(
+            Prefetch(
+                "collection_games", queryset=games))
+            .order_by("-total_votes"))
         search = request.query_params.get("search")
         if search:
             collections = collections.filter(title__icontains=search)

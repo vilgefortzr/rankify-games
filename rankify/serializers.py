@@ -5,10 +5,17 @@ from .models import Collection, Game, Vote, CollectionGame
 class CollectionSerializer(serializers.ModelSerializer):
     total_votes = serializers.IntegerField(read_only=True, default=0)
     games_count = serializers.IntegerField(read_only=True, default=0)
+    top_game = serializers.SerializerMethodField()
 
     class Meta:
         model = Collection
-        fields = ['id', 'title', 'genre', 'description', 'created_at', 'total_votes', 'games_count']
+        fields = ['id', 'title', 'genre', 'description',
+                  'created_at', 'total_votes', 'games_count',
+                  'top_game']
+
+    def get_top_game(self, obj):
+        top = next(iter(obj.collection_games.all()), None)
+        return GameSerializer(top.game).data if top else None
 
 
 class GameSerializer(serializers.ModelSerializer):

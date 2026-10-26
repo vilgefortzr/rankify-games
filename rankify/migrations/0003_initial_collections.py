@@ -10,7 +10,7 @@ DATA = [
         (20900, "The Witcher: Enhanced Edition", 9),
     ]),
     ("Best Assassin's Creed Game", "action", "Яка частина Assassin's Creed найкраща", [
-        (33420, "Assassin's Creed II", 38),
+        (33230, "Assassin's Creed II", 38),
         (242050, "Assassin's Creed IV Black Flag", 29),
         (582160, "Assassin's Creed Origins", 21),
         (812140, "Assassin's Creed Odyssey", 14),
@@ -28,16 +28,18 @@ DATA = [
         (1627720, "Lies of P", 12),
     ]),
     ("Best FromSoftware Game", "rpg", "Найкраща гра від FromSoftware", [
-        (1245620, "ELDEN RING", 52),
+        (1245620, "ELDEN RING", 67),
         (374320, "DARK SOULS III", 36),
-        (814380, "Sekiro: Shadows Die Twice", 30),
-        (1888160, "ARMORED CORE VI FIRES OF RUBICON", 11),
+        (814380, "Sekiro: Shadows Die Twice", 68),
+        (570940, "DARK SOULS: REMASTERED", 30),
+        (335300, "DARK SOULS II: Scholar of the First Sin", 22),
     ]),
     ("Best Roguelike Game", "roguelike", "Найкраща roguelike-гра", [
         (1145360, "Hades", 44),
         (588650, "Dead Cells", 27),
-        (646570, "Slay the Spire", 22),
+        (367520, "Hollow Knight", 45),
         (250900, "The Binding of Isaac: Rebirth", 15),
+        (1030300, "Hollow Knight: Silksong", 48),
     ]),
 ]
 
