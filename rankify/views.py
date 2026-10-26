@@ -1,16 +1,16 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Collection
+from .models import Collection, CollectionGame
 from .serializers import CollectionSerializer, CollectionDetailSerializer
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 
 
 class CollectionListView(APIView):
     def get(self, request):
         collections = Collection.objects.annotate(
-            total_votes=Count("collection_games__vote", distinct=True),
+            total_votes=Count("collection_games__votes", distinct=True),
             games_count=Count("collection_games", distinct=True)
         ).order_by("-total_votes")
         search = request.query_params.get("search")
@@ -28,6 +28,15 @@ class CollectionListView(APIView):
 
 class CollectionDetailView(APIView):
     def get(self, request, collection_id):
-        collection = get_object_or_404(Collection, id=collection_id)
+        games = (CollectionGame.objects
+                 .select_related('game')
+                 .annotate(votes_count=Count('votes'))
+                 .order_by("-votes_count")
+                 )
+        collection = get_object_or_404(
+            Collection.objects.prefetch_related(
+                Prefetch("collection_games", queryset=games)
+            ), id=collection_id
+        )
         serializer = CollectionDetailSerializer(collection)
         return Response(serializer.data)

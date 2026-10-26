@@ -52,7 +52,7 @@ class CollectionGame(models.Model):
 
 
 class Vote(models.Model):
-    collection_game = models.ForeignKey(CollectionGame, on_delete=models.CASCADE)
+    collection_game = models.ForeignKey(CollectionGame, on_delete=models.CASCADE, related_name='votes')
     # TODO: User
 
     def __str__(self):
