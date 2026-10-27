@@ -10,40 +10,86 @@
 
 ## Схема бази даних
 
-![Database Schema](db_scheme.png)
-
 ```text
-Game (steam_id, title, img_url(для швидкодії))
-Collection (title, genre, created_at, author_id(ForeignKey), description)
-CollectionGame (collection(ForeignKey), game(ForeignKey), votes)
+Game (id, steam_id, title, img_url)
+Collection (id, title, genre, description, created_at, author_id(ForeignKey, TBD))
+CollectionGame (id, collection_id(ForeignKey), game_id(ForeignKey)) - унікальна пара (collection, game)
+Vote (id, collection_game_id(ForeignKey), user_id(ForeignKey, TBD))
 User (TBD)
 ```
+
+Кількість голосів гри в колекції це кількість записів `Vote` для відповідного `CollectionGame`.
 
 ---
 
 ## REST API
 
-Дані передаються у форматі JSON.
+Дані передаються у форматі JSON. Базова адреса: `/api/v1`.
 
 ### Колекції
 
-| Метод | Адреса | Що робить | Тіло запиту | Відповідь |
-|---|---|---|---|---|
-| GET | `/collections/` | список колекцій (`?search=`) | немає | `200`, список колекцій |
-| POST | `/collections/` | створити колекцію | `{ "title", "genre", "description" }` | `201`, колекція; `400` |
-| GET | `/collections/{id}/` | деталі колекції з іграми й голосами | немає | `200`; `404` |
-| PATCH | `/collections/{id}/` | редагувати (*TODO: лише автор*) | будь-які поля колекції | `200`; `404` |
-| DELETE | `/collections/{id}/` | видалити (*TODO: лише автор*) | немає | `204`; `404` |
+| Метод | Адреса | Тіло запиту | Відповіді |
+|---|---|---|---|
+| GET | `/collections/` (`?search=`) | немає | `200` |
+| POST | `/collections/` | `{ "title", "genre", "description" }` | `201`; `400` |
+| GET | `/collections/{collection_id}/` | немає | `200`; `404` |
+| PATCH | `/collections/{collection_id}/` | `title`, `genre`, `description` (будь-які) | `200`; `400`; `404` |
+| DELETE | `/collections/{collection_id}/` | немає | `204`; `404` |
+
+### Ігри в колекції
+
+| Метод | Адреса | Тіло запиту | Відповіді |
+|---|---|---|---|
+| POST | `/collections/{collection_id}/games/` | `{ "steam_id" }` | `201`; `400`; `404`; `409`; `503` |
+| DELETE | `/collections/{collection_id}/games/{steam_id}/` | немає | `204`; `404` |
+
+### Голосування
+
+| Метод | Адреса | Тіло запиту | Відповіді |
+|---|---|---|---|
+| POST | `/collections/{collection_id}/votes/{collection_game_id}` | `{ "collection_game" }` | `201`; `400`; `404` |
+| DELETE | `/collections/{collection_id}/votes/{collection_game_id}` | немає | `204`; `404` |
 
 ### Ігри
 
-| Метод | Адреса | Що робить | Тіло запиту | Відповідь |
-|---|---|---|---|---|
-| POST | `/collections/{id}/games/` | додати гру зі Steam у колекцію | `{ "steam_id" }` | `201`; `404`; `409` |
-| POST | `/collections/{id}/votes/` | проголосувати за гру | `{ "game_id" }` | `201`, `{ "game_id", "votes" }`; `409`|
-| GET | `/games/` | список доданих ігор | немає | `200` |
-| GET | `/games/{id}/` | інформація про гру | немає | `200`; `404` |
-| GET | `/steam/games/?search=` | пошук гри у Steam | немає | `200`, список ігор |
+| Метод | Адреса | Тіло запиту | Відповіді |
+|---|---|---|---|
+| GET | `/games/` (`?search=`) | немає | `200` |
+| GET | `/games/{steam_id}/` | немає | `200`; `404` |
+| GET | `/steam/games/?search=` | немає | `200`; `400`; `503` |
+
+### Формат помилок
+
+```json
+{ "error": { "status": 404, "message": "Гру не знайдено у Steam." } }
+```
+
+Для `400` додається `details`:
+
+```json
+{
+  "error": {
+    "status": 400,
+    "message": "Некоректні дані.",
+    "details": { "genre": ["\"Action\" is not a valid choice."] }
+  }
+}
+```
+
+### Коди відповідей
+
+| Код | Значення | Коли |
+|---|---|---|
+| `200` | OK | успішне читання або зміна |
+| `201` | Created | створено колекцію, гру або голос |
+| `204` | No Content | успішне видалення |
+| `400` | Bad Request | невалідні дані, зламаний JSON, порожній `search` |
+| `404` | Not Found | колекції, гри чи голосу немає; Steam не знає гри |
+| `405` | Method Not Allowed | метод не підтримується адресою |
+| `409` | Conflict | гра вже є в колекції |
+| `415` | Unsupported Media Type | тіло запиту не в JSON |
+| `500` | Internal Server Error | непередбачена помилка сервера |
+| `503` | Service Unavailable | Steam API недоступний |
 
 ### Автентифікація
 

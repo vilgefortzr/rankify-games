@@ -30,6 +30,10 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "rankify.exception_handler.custom_exception_handler",
+}
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

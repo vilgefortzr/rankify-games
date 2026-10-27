@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, APIException
 from .models import Collection, CollectionGame, Game, Vote
 from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer, \
     AddGameSerializer, VoteSerializer
@@ -10,11 +10,17 @@ from django.db.models import Count, Prefetch
 from .steam import fetch_app_details, search_games
 
 
+class ConflictError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "Конфлікт даних."
+    default_code = "conflict"
+
+
 class SteamSearchView(APIView):
     def get(self, request):
         term = request.query_params.get("search", "").strip()
         if not term:
-            raise ValidationError({"search": ["Вкажіть пошуковий запит."]})
+            raise ConflictError({"search": ["Вкажіть пошуковий запит."]})
         return Response(search_games(term))
 
 
@@ -93,7 +99,7 @@ class GameDetailView(APIView):
         data = serializer.data
         try:
             data["steam"] = fetch_app_details(steam_id)
-        except SteamUnavailableError:
+        except APIException:
             data["steam"] = None
         return Response(data)
 
@@ -117,7 +123,7 @@ class CollectionGameView(APIView):
             )
 
         if CollectionGame.objects.filter(collection=collection, game=game).exists():
-            raise ConflictError("Гра вже є в цій колекції.")
+            raise ValidationError("Гра вже є в цій колекції.")
 
         CollectionGame.objects.create(collection=collection, game=game)
         return Response(GameSerializer(game).data, status=status.HTTP_201_CREATED)
@@ -157,6 +163,8 @@ class VoteView(APIView):
 
     def delete(self, request, collection_id, collection_game_id):
         votes = Vote.objects.filter(collection_game_id=collection_game_id)
+        if not votes.exists():
+            raise NotFound("За цю гру ще немає голосів.")
         votes[0].delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -1,4 +1,6 @@
 import requests
+from rest_framework import status
+from rest_framework.exceptions import APIException
 
 APPDETAILS_URL = "https://store.steampowered.com/api/appdetails"
 TIMEOUT = 5
@@ -7,6 +9,12 @@ HEADER_URL = "https://cdn.akamai.steamstatic.com/steam/apps/{}/header.jpg"
 MAX_RESULTS = 8
 COUNTRY = "ua"
 LANGUAGE = "ukrainian"
+
+
+class SteamUnavailableError(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "Steam API тимчасово недоступний. Спробуйте пізніше."
+    default_code = "steam_unavailable"
 
 
 def search_games(term):
