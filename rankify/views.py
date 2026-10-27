@@ -137,17 +137,26 @@ class CollectionGameDetailView(APIView):
 
 
 class VoteView(APIView):
-    def post(self, request, collection_id):
+    def post(self, request, collection_id, collection_game_id):
         serializer = VoteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        collection_game = serializer.validated_data['collection_game']
+        collection_game = get_object_or_404(
+            CollectionGame,
+            collection_id=collection_id,
+            id=serializer.validated_data["collection_game"].id,
+        )
         Vote.objects.create(collection_game=collection_game)
-        return Response(status=status.HTTP_201_CREATED)
+        votes_count = collection_game.votes.count()
+        return Response(
+            {
+                "game_id": collection_game.game_id,
+                "votes_count": votes_count,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
-    def delete(self, request, collection_game_id):
-        vote = get_object_or_404(Vote, collection_game_id=collection_game_id)
-        vote.delete()
+    def delete(self, request, collection_id, collection_game_id):
+        votes = Vote.objects.filter(collection_game_id=collection_game_id)
+        votes[0].delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 
