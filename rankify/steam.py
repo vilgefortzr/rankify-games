@@ -2,13 +2,37 @@ import requests
 
 APPDETAILS_URL = "https://store.steampowered.com/api/appdetails"
 TIMEOUT = 5
+STORESEARCH_URL = "https://store.steampowered.com/api/storesearch/"
+HEADER_URL = "https://cdn.akamai.steamstatic.com/steam/apps/{}/header.jpg"
+MAX_RESULTS = 8
+COUNTRY = "ua"
+LANGUAGE = "ukrainian"
+
+
+def search_games(term):
+    try:
+        response = requests.get(
+            STORESEARCH_URL,
+            params={"term": term, "l": LANGUAGE, "cc": COUNTRY},
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        items = response.json().get("items", [])
+    except (requests.RequestException, ValueError):
+        raise SteamUnavailableError()
+
+    return [
+        {"steam_id": item["id"], "title": item["name"], "img_url": HEADER_URL.format(item["id"])}
+        for item in items
+        if item.get("type") == "app"
+    ][:MAX_RESULTS]
 
 
 def fetch_app_details(steam_id):
     try:
         response = requests.get(
             APPDETAILS_URL,
-            params={"appids": steam_id, "l": "ukrainian", "cc": "ua"},
+            params={"appids": steam_id, "l": LANGUAGE, "cc": COUNTRY},
             timeout=TIMEOUT,
         )
         response.raise_for_status()

@@ -1,12 +1,21 @@
-from django.db.migrations import serializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError, NotFound
 from .models import Collection, CollectionGame, Game
-from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer
+from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer, \
+    AddGameSerializer
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Prefetch
-from .steam import fetch_app_details
+from django.db.models import Count, Prefetch, Model
+from .steam import fetch_app_details, search_games
+
+
+class SteamSearchView(APIView):
+    def get(self, request):
+        term = request.query_params.get("search", "").strip()
+        if not term:
+            raise ValidationError({"search": ["Вкажіть пошуковий запит."]})
+        return Response(search_games(term))
 
 
 class CollectionListView(APIView):
@@ -87,6 +96,45 @@ class GameDetailView(APIView):
         except SteamUnavailableError:
             data["steam"] = None
         return Response(data)
+
+
+class CollectionGameView(APIView):
+    def post(self, request, collection_id):
+        collection = get_object_or_404(Collection, id=collection_id)
+        serializer = AddGameSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        steam_id = serializer.validated_data["steam_id"]
+
+        game = Game.objects.filter(steam_id=steam_id).first()
+        if game is None:
+            details = fetch_app_details(steam_id)
+            if details is None:
+                raise NotFound("Гру не знайдено у Steam.")
+            game = Game.objects.create(
+                steam_id=steam_id,
+                title=details["name"],
+                img_url=details["header_image"],
+            )
+
+        if CollectionGame.objects.filter(collection=collection, game=game).exists():
+            raise ConflictError("Гра вже є в цій колекції.")
+
+        CollectionGame.objects.create(collection=collection, game=game)
+        return Response(GameSerializer(game).data, status=status.HTTP_201_CREATED)
+
+
+class CollectionGameDetailView(APIView):
+    def delete(self, request, collection_id, steam_id):
+        collection_game = get_object_or_404(
+            CollectionGame, collection_id=collection_id, game__steam_id=steam_id
+        )
+        game = collection_game.game
+        collection_game.delete()
+
+        if not CollectionGame.objects.filter(game=game).exists():
+            game.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 

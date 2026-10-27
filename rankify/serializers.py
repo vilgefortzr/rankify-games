@@ -57,3 +57,6 @@ class GameDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = ['id', 'steam_id', 'title', 'img_url', 'game_collections']
+
+class AddGameSerializer(serializers.Serializer):
+    steam_id = serializers.IntegerField(min_value=1)
