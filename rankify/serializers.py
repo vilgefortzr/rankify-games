@@ -39,3 +39,21 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ['id', 'title', 'genre', 'description', 'created_at', 'games']
+
+
+class GameCollectionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='collection.id', read_only=True)
+    title = serializers.CharField(source='collection.title', read_only=True)
+    genre = serializers.CharField(source='collection.genre', read_only=True)
+
+    class Meta:
+        model = CollectionGame
+        fields = ['id', 'title', 'genre']
+
+
+class GameDetailSerializer(serializers.ModelSerializer):
+    game_collections = GameCollectionSerializer(source='in_collections', many=True, read_only=True)
+
+    class Meta:
+        model = Game
+        fields = ['id', 'steam_id', 'title', 'img_url', 'game_collections']

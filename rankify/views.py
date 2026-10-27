@@ -1,8 +1,9 @@
+from django.db.migrations import serializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Collection, CollectionGame
-from .serializers import CollectionSerializer, CollectionDetailSerializer
+from .models import Collection, CollectionGame, Game
+from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Prefetch
 
@@ -61,5 +62,26 @@ class CollectionDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GameListView(APIView):
+    def get(self, request):
+        games = Game.objects.all()
+        search = request.query_params.get("search")
+        if search:
+            games = games.filter(title__icontains=search)
+        serializer = GameSerializer(games, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GameDetailView(APIView):
+    def get(self, request, steam_id):
+        game_collections = CollectionGame.objects.select_related("collection")
+        game = get_object_or_404(Game.objects.prefetch_related(
+            Prefetch("in_collections", queryset=game_collections)), steam_id=steam_id)
+        serializer = GameDetailSerializer(game)
+        return Response(serializer.data)
+
+
 
 
