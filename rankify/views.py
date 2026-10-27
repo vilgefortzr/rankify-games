@@ -6,6 +6,7 @@ from .models import Collection, CollectionGame, Game
 from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Prefetch
+from .steam import fetch_app_details
 
 
 class CollectionListView(APIView):
@@ -80,7 +81,12 @@ class GameDetailView(APIView):
         game = get_object_or_404(Game.objects.prefetch_related(
             Prefetch("in_collections", queryset=game_collections)), steam_id=steam_id)
         serializer = GameDetailSerializer(game)
-        return Response(serializer.data)
+        data = serializer.data
+        try:
+            data["steam"] = fetch_app_details(steam_id)
+        except SteamUnavailableError:
+            data["steam"] = None
+        return Response(data)
 
 
 
