@@ -8,6 +8,59 @@
 
 ---
 
+## Як запустити проєкт
+
+### Попередні вимоги
+- **Python**
+- **Node.js**
+
+---
+
+### 1. Запуск бекенду
+
+1. **Створіть та активуйте віртуальне середовище:**
+   ```bash
+   # Linux / macOS
+   python3 -m venv venv
+   source venv/bin/activate
+
+   # Windows
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+2. **Встановіть залежності:**
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+3. **Виконайте міграції бази даних:**
+   ```bash
+   python manage.py migrate
+   ```
+
+4. **Запустіть сервер розробки:**
+   ```bash
+   python manage.py runserver
+   ```
+   *Бекенд буде доступний за адресою:* `http://localhost:8000/api/v1/`
+
+---
+
+### 2. Запуск фронтенду
+
+1. **Встановіть Node-залежності:**
+   ```bash
+   npm install
+   ```
+
+2. **Запустіть сервер розробки:**
+   ```bash
+   npm run dev
+   ```
+   *Фронтенд буде доступний за адресою:* `http://localhost:5173/`
+
+
 ## Схема бази даних
 
 ```text
