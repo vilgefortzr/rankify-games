@@ -30,7 +30,7 @@ class CollectionGameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CollectionGame
-        fields = ['game', 'votes_count']
+        fields = ['id', 'game', 'votes_count']
 
 
 class CollectionDetailSerializer(serializers.ModelSerializer):
@@ -60,3 +60,9 @@ class GameDetailSerializer(serializers.ModelSerializer):
 
 class AddGameSerializer(serializers.Serializer):
     steam_id = serializers.IntegerField(min_value=1)
+
+
+class VoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vote
+        fields = ['id', 'collection_game']

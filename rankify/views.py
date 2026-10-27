@@ -2,11 +2,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError, NotFound
-from .models import Collection, CollectionGame, Game
+from .models import Collection, CollectionGame, Game, Vote
 from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer, \
-    AddGameSerializer
+    AddGameSerializer, VoteSerializer
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Prefetch, Model
+from django.db.models import Count, Prefetch
 from .steam import fetch_app_details, search_games
 
 
@@ -136,6 +136,18 @@ class CollectionGameDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class VoteView(APIView):
+    def post(self, request, collection_id):
+        serializer = VoteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collection_game = serializer.validated_data['collection_game']
+        Vote.objects.create(collection_game=collection_game)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request, collection_game_id):
+        vote = get_object_or_404(Vote, collection_game_id=collection_game_id)
+        vote.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
