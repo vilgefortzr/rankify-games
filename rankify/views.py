@@ -49,3 +49,17 @@ class CollectionDetailView(APIView):
         )
         serializer = CollectionDetailSerializer(collection)
         return Response(serializer.data)
+
+    def delete(self, request, collection_id):
+        collection = get_object_or_404(Collection, id=collection_id)
+        collection.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def patch(self, request, collection_id):
+        collection = get_object_or_404(Collection, id=collection_id)
+        serializer = CollectionDetailSerializer(collection, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
