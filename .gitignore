@@ -220,3 +220,4 @@ check_submission.py
 pyproject.toml
 requirements-dev.txt
 .gitattributes
+.editorconfig
