@@ -221,3 +221,4 @@ pyproject.toml
 requirements-dev.txt
 .gitattributes
 .editorconfig
+.claude
