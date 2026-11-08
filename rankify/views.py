@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError, NotFound, APIException
 from .models import Collection, CollectionGame, Game, Vote
 from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer, \
-    AddGameSerializer, VoteSerializer
+    AddGameSerializer, VoteSerializer, CollectionUpdateSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Prefetch
 from .steam import fetch_app_details, search_games
@@ -37,8 +37,8 @@ class CollectionListView(APIView):
             games_count=Count("collection_games", distinct=True)
         ).prefetch_related(
             Prefetch(
-                "collection_games", queryset=games))
-            .order_by("-total_votes"))
+                "collection_games", queryset=games[:1], to_attr="top_games"))
+            .order_by("-total_votes", "title"))
         search = request.query_params.get("search")
         if search:
             collections = collections.filter(title__icontains=search)
@@ -54,15 +54,15 @@ class CollectionListView(APIView):
 
 class CollectionDetailView(APIView):
     def get(self, request, collection_id):
-        games = (CollectionGame.objects
-                 .select_related('game')
-                 .annotate(votes_count=Count('votes'))
-                 .order_by("-votes_count")
-                 )
+        games = (
+            CollectionGame.objects
+            .select_related("game")
+            .annotate(votes_count=Count("votes"))
+            .order_by("-votes_count", "game__title")
+        )
         collection = get_object_or_404(
-            Collection.objects.prefetch_related(
-                Prefetch("collection_games", queryset=games)
-            ), id=collection_id
+            Collection.objects.prefetch_related(Prefetch("collection_games", queryset=games)),
+            id=collection_id,
         )
         serializer = CollectionDetailSerializer(collection)
         return Response(serializer.data)
@@ -74,7 +74,7 @@ class CollectionDetailView(APIView):
 
     def patch(self, request, collection_id):
         collection = get_object_or_404(Collection, id=collection_id)
-        serializer = CollectionDetailSerializer(collection, data=request.data, partial=True)
+        serializer = CollectionUpdateSerializer(collection, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)

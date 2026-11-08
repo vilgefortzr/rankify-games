@@ -14,8 +14,8 @@ class CollectionSerializer(serializers.ModelSerializer):
                   'top_game']
 
     def get_top_game(self, obj):
-        top = next(iter(obj.collection_games.all()), None)
-        return GameSerializer(top.game).data if top else None
+        top_games = getattr(obj, "top_games", [])
+        return GameSerializer(top_games[0].game).data if top_games else None
 
 
 class GameSerializer(serializers.ModelSerializer):
@@ -41,6 +41,12 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'genre', 'description', 'created_at', 'games']
 
 
+class CollectionUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ['id', 'title', 'genre', 'description']
+
+
 class GameCollectionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='collection.id', read_only=True)
     title = serializers.CharField(source='collection.title', read_only=True)
@@ -57,6 +63,7 @@ class GameDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
         fields = ['id', 'steam_id', 'title', 'img_url', 'game_collections']
+
 
 class AddGameSerializer(serializers.Serializer):
     steam_id = serializers.IntegerField(min_value=1)
