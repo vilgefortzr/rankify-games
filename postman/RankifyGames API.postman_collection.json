@@ -1,0 +1,354 @@
+{
+  "info": {
+    "_postman_id": "e6e69baf-c6bd-46dd-a008-a2480d823066",
+    "name": "RankifyGames API",
+    "description": "REST API for RankifyGames. Base URL: `{{baseUrl}}` (default `http://localhost:8000/api/v1`). All data is JSON.\n\nErrors use the format `{ \"error\": { \"status\", \"code\", \"message\", \"details\" } }`; `details` holds field errors for `400`.\n\nUsers and Authentication: TBD.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56070746",
+    "_collection_link": "https://go.postman.co/collection/56070746-e6e69baf-c6bd-46dd-a008-a2480d823066?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Collections",
+      "item": [
+        {
+          "name": "List collections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collections/?search=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "`200` `[Collection]`. Sorted by `total_votes`, then `title`."
+          },
+          "response": []
+        },
+        {
+          "name": "Create collection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Best Assassin's Creed Game\",\n  \"genre\": \"action\",\n  \"description\": \"Which entry is the best?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collections/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                ""
+              ]
+            },
+            "description": "`201` `Collection`; `400`. `description` is optional. `genre`: action, adventure, rpg, shooter, strategy, simulation, sports, racing, fighting, platformer, puzzle, horror, survival, open_world, roguelike, indie, other."
+          },
+          "response": []
+        },
+        {
+          "name": "Get collection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                ""
+              ]
+            },
+            "description": "`200` `CollectionDetail`; `404`."
+          },
+          "response": []
+        },
+        {
+          "name": "Update collection",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Witcher Trilogy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                ""
+              ]
+            },
+            "description": "Any of `title`, `genre`, `description`. `200` `CollectionUpdate`; `400`; `404`."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete collection",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                ""
+              ]
+            },
+            "description": "`204`; `404`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Collection Games",
+      "item": [
+        {
+          "name": "Add game to collection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"steam_id\": {{steam_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/games/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                "games",
+                ""
+              ]
+            },
+            "description": "`201` `Game`; `400`; `404` (collection missing or game unknown to Steam); `409` (already in collection); `503` (Steam unavailable)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove game from collection",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/games/{{steam_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                "games",
+                "{{steam_id}}",
+                ""
+              ]
+            },
+            "description": "`204`; `404`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Votes",
+      "item": [
+        {
+          "name": "Vote for game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/votes/{{collection_game_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                "votes",
+                "{{collection_game_id}}",
+                ""
+              ]
+            },
+            "description": "No body. `201` `{ \"game_id\", \"votes_count\" }`; `404`. `collection_game_id` is the `id` of an entry in `CollectionDetail.games`."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove vote",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/collections/{{collection_id}}/votes/{{collection_game_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "collections",
+                "{{collection_id}}",
+                "votes",
+                "{{collection_game_id}}",
+                ""
+              ]
+            },
+            "description": "`204`; `404` (not found or game has no votes)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Games",
+      "item": [
+        {
+          "name": "List games",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/games/?search=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "games",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "`200` `[Game]`."
+          },
+          "response": []
+        },
+        {
+          "name": "Get game",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/games/{{steam_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "games",
+                "{{steam_id}}",
+                ""
+              ]
+            },
+            "description": "`200` `GameDetail` (with `steam` details, or `null` if Steam is unavailable); `404`."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Steam",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/steam/games/?search=witcher",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "steam",
+                "games",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "witcher"
+                }
+              ]
+            },
+            "description": "`200` `[SteamResult]` (up to 8); `400` (empty search); `503`."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1"
+    },
+    {
+      "key": "collection_id",
+      "value": "1"
+    },
+    {
+      "key": "steam_id",
+      "value": "1091500"
+    },
+    {
+      "key": "collection_game_id",
+      "value": "1"
+    }
+  ]
+}

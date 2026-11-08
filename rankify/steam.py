@@ -1,6 +1,7 @@
 import html
 
 import requests
+
 from .exception_handler import SteamUnavailableError
 
 APPDETAILS_URL = "https://store.steampowered.com/api/appdetails"
@@ -30,11 +31,14 @@ def _get_json(url, params):
 def _available_ids(ids, country):
     if not ids:
         return set()
-    payload = _get_json(APPDETAILS_URL, {
-        "appids": ",".join(map(str, ids)),
-        "filters": "price_overview",
-        "cc": country,
-    })
+    payload = _get_json(
+        APPDETAILS_URL,
+        {
+            "appids": ",".join(map(str, ids)),
+            "filters": "price_overview",
+            "cc": country,
+        },
+    )
     return {int(app_id) for app_id, entry in payload.items() if entry.get("success")}
 
 
@@ -44,23 +48,33 @@ def search_games(term):
 
     ids = [item["id"] for item in items]
     available = _available_ids(ids, COUNTRY)
-    available.update(_available_ids([i for i in ids if i not in available], FALLBACK_COUNTRY))
+    available.update(
+        _available_ids([i for i in ids if i not in available], FALLBACK_COUNTRY)
+    )
 
     return [
-        {"steam_id": item["id"], "title": item["name"], "img_url": HEADER_URL.format(item["id"])}
+        {
+            "steam_id": item["id"],
+            "title": item["name"],
+            "img_url": HEADER_URL.format(item["id"]),
+        }
         for item in items
         if item["id"] in available
     ][:MAX_RESULTS]
 
 
 def _fetch_app_data(steam_id, country):
-    payload = _get_json(APPDETAILS_URL, {"appids": steam_id, "l": LANGUAGE, "cc": country})
+    payload = _get_json(
+        APPDETAILS_URL, {"appids": steam_id, "l": LANGUAGE, "cc": country}
+    )
     entry = payload.get(str(steam_id), {})
     return entry.get("data") if entry.get("success") else None
 
 
 def _fetch_app_data_with_fallback(steam_id):
-    return _fetch_app_data(steam_id, COUNTRY) or _fetch_app_data(steam_id, FALLBACK_COUNTRY)
+    return _fetch_app_data(steam_id, COUNTRY) or _fetch_app_data(
+        steam_id, FALLBACK_COUNTRY
+    )
 
 
 def fetch_game(steam_id):
@@ -95,7 +109,11 @@ def fetch_app_details(steam_id):
         "coming_soon": release.get("coming_soon", False),
         "developers": data.get("developers") or [],
         "publishers": data.get("publishers") or [],
-        "genres": [genre["description"] for genre in data.get("genres") or [] if genre.get("description")],
+        "genres": [
+            genre["description"]
+            for genre in data.get("genres") or []
+            if genre.get("description")
+        ],
         "metacritic_score": metacritic.get("score"),
         "store_url": f"https://store.steampowered.com/app/{steam_id}",
     }

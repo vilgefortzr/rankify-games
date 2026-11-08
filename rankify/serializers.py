@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Collection, Game, CollectionGame
+
+from .models import Collection, CollectionGame, Game
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -9,9 +10,16 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ['id', 'title', 'genre', 'description',
-                  'created_at', 'total_votes', 'games_count',
-                  'top_game']
+        fields = [
+            "id",
+            "title",
+            "genre",
+            "description",
+            "created_at",
+            "total_votes",
+            "games_count",
+            "top_game",
+        ]
 
     def get_top_game(self, obj):
         top_games = getattr(obj, "top_games", [])
@@ -21,7 +29,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class GameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Game
-        fields = ['id', 'steam_id', 'title', 'img_url']
+        fields = ["id", "steam_id", "title", "img_url"]
 
 
 class CollectionGameSerializer(serializers.ModelSerializer):
@@ -30,41 +38,44 @@ class CollectionGameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CollectionGame
-        fields = ['id', 'game', 'votes_count']
+        fields = ["id", "game", "votes_count"]
 
 
 class CollectionDetailSerializer(serializers.ModelSerializer):
-    games = CollectionGameSerializer(source='collection_games', many=True, read_only=True)
+    games = CollectionGameSerializer(
+        source="collection_games", many=True, read_only=True
+    )
 
     class Meta:
         model = Collection
-        fields = ['id', 'title', 'genre', 'description', 'created_at', 'games']
+        fields = ["id", "title", "genre", "description", "created_at", "games"]
 
 
 class CollectionUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ['id', 'title', 'genre', 'description']
+        fields = ["id", "title", "genre", "description"]
 
 
 class GameCollectionSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='collection.id', read_only=True)
-    title = serializers.CharField(source='collection.title', read_only=True)
-    genre = serializers.CharField(source='collection.genre', read_only=True)
+    id = serializers.IntegerField(source="collection.id", read_only=True)
+    title = serializers.CharField(source="collection.title", read_only=True)
+    genre = serializers.CharField(source="collection.genre", read_only=True)
 
     class Meta:
         model = CollectionGame
-        fields = ['id', 'title', 'genre']
+        fields = ["id", "title", "genre"]
 
 
 class GameDetailSerializer(serializers.ModelSerializer):
-    game_collections = GameCollectionSerializer(source='in_collections', many=True, read_only=True)
+    game_collections = GameCollectionSerializer(
+        source="in_collections", many=True, read_only=True
+    )
 
     class Meta:
         model = Game
-        fields = ['id', 'steam_id', 'title', 'img_url', 'game_collections']
+        fields = ["id", "steam_id", "title", "img_url", "game_collections"]
 
 
 class AddGameSerializer(serializers.Serializer):
     steam_id = serializers.IntegerField(min_value=1)
-
