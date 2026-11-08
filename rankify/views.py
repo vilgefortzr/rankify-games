@@ -7,20 +7,15 @@ from .serializers import CollectionSerializer, CollectionDetailSerializer, GameS
     AddGameSerializer, VoteSerializer, CollectionUpdateSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Prefetch
-from .steam import fetch_app_details, search_games
-
-
-class ConflictError(APIException):
-    status_code = status.HTTP_409_CONFLICT
-    default_detail = "Конфлікт даних."
-    default_code = "conflict"
+from .steam import fetch_app_details, fetch_game, search_games
+from .exception_handler import ConflictError
 
 
 class SteamSearchView(APIView):
     def get(self, request):
         term = request.query_params.get("search", "").strip()
         if not term:
-            raise ConflictError({"search": ["Вкажіть пошуковий запит."]})
+            raise ValidationError({"search": ["Provide a search term."]})
         return Response(search_games(term))
 
 
@@ -113,19 +108,15 @@ class CollectionGameView(APIView):
 
         game = Game.objects.filter(steam_id=steam_id).first()
         if game is None:
-            details = fetch_app_details(steam_id)
-            if details is None:
-                raise NotFound("Гру не знайдено у Steam.")
-            game = Game.objects.create(
-                steam_id=steam_id,
-                title=details["name"],
-                img_url=details["header_image"],
-            )
+            game_data = fetch_game(steam_id)
+            if game_data is None:
+                raise NotFound("Game not found on Steam.", code="game_not_found")
+            game, _ = Game.objects.get_or_create(steam_id=steam_id, defaults=game_data)
 
-        if CollectionGame.objects.filter(collection=collection, game=game).exists():
-            raise ValidationError("Гра вже є в цій колекції.")
+        _, created = CollectionGame.objects.get_or_create(collection=collection, game=game)
+        if not created:
+            raise ConflictError("This game is already in the collection.", code="game_already_in_collection")
 
-        CollectionGame.objects.create(collection=collection, game=game)
         return Response(GameSerializer(game).data, status=status.HTTP_201_CREATED)
 
 
