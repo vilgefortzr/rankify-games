@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError, NotFound, APIException
 from .models import Collection, CollectionGame, Game, Vote
 from .serializers import CollectionSerializer, CollectionDetailSerializer, GameSerializer, GameDetailSerializer, \
-    AddGameSerializer, VoteSerializer, CollectionUpdateSerializer
+    AddGameSerializer, CollectionUpdateSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Prefetch
 from .steam import fetch_app_details, fetch_game, search_games
@@ -135,12 +135,8 @@ class CollectionGameDetailView(APIView):
 
 class VoteView(APIView):
     def post(self, request, collection_id, collection_game_id):
-        serializer = VoteSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         collection_game = get_object_or_404(
-            CollectionGame,
-            collection_id=collection_id,
-            id=serializer.validated_data["collection_game"].id,
+            CollectionGame, id=collection_game_id, collection_id=collection_id
         )
         Vote.objects.create(collection_game=collection_game)
         votes_count = collection_game.votes.count()
@@ -153,9 +149,13 @@ class VoteView(APIView):
         )
 
     def delete(self, request, collection_id, collection_game_id):
-        votes = Vote.objects.filter(collection_game_id=collection_game_id)
-        if not votes.exists():
-            raise NotFound("За цю гру ще немає голосів.")
-        votes[0].delete()
+        collection_game = get_object_or_404(
+            CollectionGame, id=collection_game_id, collection_id=collection_id
+        )
+        vote = collection_game.votes.first()
+        if vote is None:
+            raise NotFound("This game has no votes yet.", code="game_has_no_votes")
+        vote.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 

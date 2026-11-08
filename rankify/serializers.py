@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Collection, Game, Vote, CollectionGame
+from .models import Collection, Game, CollectionGame
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -68,8 +68,3 @@ class GameDetailSerializer(serializers.ModelSerializer):
 class AddGameSerializer(serializers.Serializer):
     steam_id = serializers.IntegerField(min_value=1)
 
-
-class VoteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Vote
-        fields = ['id', 'collection_game']
