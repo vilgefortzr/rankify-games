@@ -11,7 +11,6 @@ Each game page shows a short description from the public Steam API. Searching fo
 ### Related repositories
 
 - [Frontend](https://github.com/vilgefortzr/rankify-games-frontend)
-- [Backend](https://github.com/vilgefortzr/rankify-games)
 
 ## Getting Started
 
