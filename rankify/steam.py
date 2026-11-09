@@ -103,7 +103,6 @@ def fetch_app_details(steam_id):
 
     return {
         "short_description": html.unescape(description) if description else None,
-        "background_url": data.get("background_raw") or data.get("background"),
         "screenshots": screenshots,
         "release_date": release.get("date"),
         "coming_soon": release.get("coming_soon", False),

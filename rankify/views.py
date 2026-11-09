@@ -74,7 +74,10 @@ class CollectionDetailView(APIView):
 
     def delete(self, request, collection_id):
         collection = get_object_or_404(Collection, id=collection_id)
+        games_ids = [collection_game.game.id for collection_game
+                 in CollectionGame.objects.filter(collection_id=collection_id)]
         collection.delete()
+        Game.objects.filter(id__in=games_ids, in_collections__isnull=True).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, collection_id):
