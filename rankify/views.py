@@ -175,7 +175,14 @@ class VoteView(APIView):
         collection_game = get_object_or_404(
             CollectionGame, id=collection_game_id, collection_id=collection_id
         )
-        Vote.objects.create(collection_game=collection_game)
+        if (Vote.objects.filter(author_id=request.user.id,
+                                collection_game__collection=collection_game.collection)
+                                .exists()):
+            raise ConflictError(
+                "You already voted in this collection.",
+                code="vote_exists",
+            )
+        Vote.objects.create(collection_game=collection_game, author=request.user)
         votes_count = collection_game.votes.count()
         return Response(
             {
@@ -186,11 +193,8 @@ class VoteView(APIView):
         )
 
     def delete(self, request, collection_id, collection_game_id):
-        collection_game = get_object_or_404(
-            CollectionGame, id=collection_game_id, collection_id=collection_id
-        )
-        vote = collection_game.votes.first()
-        if vote is None:
-            raise NotFound("This game has no votes yet.", code="game_has_no_votes")
+        vote = get_object_or_404(Vote, collection_game_id=collection_game_id,
+                                   collection_game__collection_id=collection_id,
+                                   author=request.user)
         vote.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

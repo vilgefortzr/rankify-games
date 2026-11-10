@@ -68,4 +68,5 @@ class Vote(models.Model):
                              related_name='votes', null=True)
 
     def __str__(self):
-        return f"Vote for {self.collection_game} from {self.author.username}" if author else f"Vote for {self.collection_game} from {self.author.username}"
+        return f"Vote for {self.collection_game} from {self.author.username}" if self.author \
+            else f"Vote for {self.collection_game}"
