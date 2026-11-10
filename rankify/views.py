@@ -2,6 +2,7 @@ from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -27,6 +28,8 @@ class SteamSearchView(APIView):
 
 
 class CollectionListView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get(self, request):
         games = (
             CollectionGame.objects.select_related("game")

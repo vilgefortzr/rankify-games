@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Game(models.Model):
@@ -34,6 +35,8 @@ class Collection(models.Model):
     title = models.CharField(max_length=100)
     genre = models.CharField(max_length=30, choices=GENRES)
     description = models.TextField(blank=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                               related_name='collections', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -61,7 +64,8 @@ class Vote(models.Model):
     collection_game = models.ForeignKey(
         CollectionGame, on_delete=models.CASCADE, related_name="votes"
     )
-    # TODO: User
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='votes', null=True)
 
     def __str__(self):
-        return f"Vote for {self.collection_game}"
+        return f"Vote for {self.collection_game} from {self.author.username}" if author else f"Vote for {self.collection_game} from {self.author.username}"
