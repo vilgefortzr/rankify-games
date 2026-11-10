@@ -179,7 +179,7 @@ class VoteView(APIView):
                                 collection_game__collection=collection_game.collection)
                                 .exists()):
             raise ConflictError(
-                "You already voted in this collection.",
+                "You have already voted in this collection.",
                 code="vote_exists",
             )
         Vote.objects.create(collection_game=collection_game, author=request.user)
