@@ -1,6 +1,7 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Collection, CollectionGame, Game
+from .models import Collection, CollectionGame, Game, Vote
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -41,14 +42,43 @@ class CollectionGameSerializer(serializers.ModelSerializer):
         fields = ["id", "game", "votes_count"]
 
 
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username"]
+
+
 class CollectionDetailSerializer(serializers.ModelSerializer):
     games = CollectionGameSerializer(
         source="collection_games", many=True, read_only=True
     )
+    author = AuthorSerializer(read_only=True)
+    user_vote = serializers.SerializerMethodField()
 
     class Meta:
         model = Collection
-        fields = ["id", "title", "genre", "description", "created_at", "games"]
+        fields = [
+            "id",
+            "title",
+            "genre",
+            "description",
+            "created_at",
+            "games",
+            "author",
+            "user_vote",
+        ]
+        read_only_fields = ["created_at"]
+
+    def get_user_vote(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated:
+            return None
+        return (
+            Vote.objects.filter(author=user, collection_game__collection=obj)
+            .values_list("collection_game_id", flat=True)
+            .first()
+        )
 
 
 class CollectionUpdateSerializer(serializers.ModelSerializer):

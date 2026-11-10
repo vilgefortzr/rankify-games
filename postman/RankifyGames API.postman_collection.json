@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e6e69baf-c6bd-46dd-a008-a2480d823066",
     "name": "RankifyGames API",
-    "description": "REST API for RankifyGames. Base URL: `{{baseUrl}}` (default `http://localhost:8000/api/v1`). All data is JSON.\n\nErrors use the format `{ \"error\": { \"status\", \"code\", \"message\", \"details\" } }`; `details` holds field errors for `400`.\n\nUsers and Authentication: TBD.",
+    "description": "REST API for RankifyGames. Base URL: `{{baseUrl}}` (default `http://localhost:8000/api/v1`). All data is JSON.\n\nErrors use the format `{ \"error\": { \"status\", \"code\", \"message\", \"details\" } }`; `details` holds field errors for `400`.\n\nAuthentication: JWT. Run **Auth / Login** first: its script stores the tokens in the `access` and `refresh` collection variables, and every request inherits `Authorization: Bearer {{access}}` from the collection. When the access token expires (`401`), run **Auth / Refresh access token**.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "56070746",
     "_collection_link": "https://go.postman.co/collection/56070746-e6e69baf-c6bd-46dd-a008-a2480d823066?source=collection_link"
@@ -14,6 +14,9 @@
         {
           "name": "List collections",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -32,7 +35,7 @@
                 }
               ]
             },
-            "description": "`200` `[Collection]`. Sorted by `total_votes`, then `title`."
+            "description": "Public. `200` `[Collection]`. Sorted by `total_votes`, then `title`."
           },
           "response": []
         },
@@ -65,13 +68,16 @@
                 ""
               ]
             },
-            "description": "`201` `Collection`; `400`. `description` is optional. `genre`: action, adventure, rpg, shooter, strategy, simulation, sports, racing, fighting, platformer, puzzle, horror, survival, open_world, roguelike, indie, other."
+            "description": "`201` `Collection`; `400`; `401`. Requires authentication; the current user becomes the `author`. `description` is optional. `genre`: action, adventure, rpg, shooter, strategy, simulation, sports, racing, fighting, platformer, puzzle, horror, survival, open_world, roguelike, indie, other."
           },
           "response": []
         },
         {
           "name": "Get collection",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -85,7 +91,7 @@
                 ""
               ]
             },
-            "description": "`200` `CollectionDetail`; `404`."
+            "description": "Public. `200` `CollectionDetail` (includes `author`: user id or `null`); `404`."
           },
           "response": []
         },
@@ -119,7 +125,7 @@
                 ""
               ]
             },
-            "description": "Any of `title`, `genre`, `description`. `200` `CollectionUpdate`; `400`; `404`."
+            "description": "Any of `title`, `genre`, `description`. `200` `CollectionUpdate`; `400`; `401`; `403`; `404`. Only the collection's author or an admin."
           },
           "response": []
         },
@@ -139,7 +145,7 @@
                 ""
               ]
             },
-            "description": "`204`; `404`."
+            "description": "`204`; `401`; `403`; `404`. Only the collection's author or an admin."
           },
           "response": []
         }
@@ -179,7 +185,7 @@
                 ""
               ]
             },
-            "description": "`201` `Game`; `400`; `404` (collection missing or game unknown to Steam); `409` (already in collection); `503` (Steam unavailable)."
+            "description": "`201` `Game`; `400`; `401`; `403`; `404` (collection missing or game unknown to Steam); `409` (already in collection); `503` (Steam unavailable). Only the collection's author or an admin."
           },
           "response": []
         },
@@ -201,7 +207,7 @@
                 ""
               ]
             },
-            "description": "`204`; `404`."
+            "description": "`204`; `401`; `403`; `404`. Only the collection's author or an admin."
           },
           "response": []
         }
@@ -228,7 +234,7 @@
                 ""
               ]
             },
-            "description": "No body. `201` `{ \"game_id\", \"votes_count\" }`; `404`. `collection_game_id` is the `id` of an entry in `CollectionDetail.games`."
+            "description": "No body. `201` `{ \"game_id\", \"votes_count\" }`; `401`; `404`; `409` (user already voted in this collection). Requires authentication. `collection_game_id` is the `id` of an entry in `CollectionDetail.games`."
           },
           "response": []
         },
@@ -250,7 +256,7 @@
                 ""
               ]
             },
-            "description": "`204`; `404` (not found or game has no votes)."
+            "description": "`204`; `401`; `404` (current user has no vote for this game). Requires authentication; removes the current user's own vote."
           },
           "response": []
         }
@@ -262,6 +268,9 @@
         {
           "name": "List games",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -280,13 +289,16 @@
                 }
               ]
             },
-            "description": "`200` `[Game]`."
+            "description": "Public. `200` `[Game]`."
           },
           "response": []
         },
         {
           "name": "Get game",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -300,7 +312,7 @@
                 ""
               ]
             },
-            "description": "`200` `GameDetail` (with `steam` details, or `null` if Steam is unavailable); `404`."
+            "description": "Public. `200` `GameDetail` (with `steam` details, or `null` if Steam is unavailable); `404`."
           },
           "response": []
         },
@@ -326,13 +338,188 @@
                 }
               ]
             },
-            "description": "`200` `[SteamResult]` (up to 8); `400` (empty search); `503`."
+            "description": "`200` `[SteamResult]` (up to 8); `400` (empty search); `401`; `503`. Requires authentication."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"first_name\": \"\",\n  \"last_name\": \"\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password_confirmation\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                ""
+              ]
+            },
+            "description": "Public. `201` `User` (without passwords); `400` with field errors in `details` (required fields, max length, email format, duplicate username/email, password too short / too common / numeric only / too similar to username, passwords don't match)."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.collectionVariables.set(\"access\", data.access);",
+                  "    pm.collectionVariables.set(\"refresh\", data.refresh);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login",
+                ""
+              ]
+            },
+            "description": "Public. `200` `{ \"refresh\", \"access\" }`; `400` missing fields; `401` wrong credentials. The post-response script saves both tokens to the `access` / `refresh` collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh access token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set(\"access\", pm.response.json().access);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/token/refresh/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "token",
+                "refresh",
+                ""
+              ]
+            },
+            "description": "Public. The refresh token goes in the body, not in the header. `200` `{ \"access\" }`; `400` missing `refresh`; `401` refresh token invalid or expired. The post-response script saves the new access token."
+          },
+          "response": []
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                ""
+              ]
+            },
+            "description": "Requires `Authorization: Bearer {{access}}` (inherited from the collection). `200` `CurrentUser` (`id`, `username`, `first_name`, `last_name`, `email`, `is_staff`); `401` no / invalid / expired token."
           },
           "response": []
         }
       ]
     }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access}}",
+        "type": "string"
+      }
+    ]
+  },
   "variable": [
     {
       "key": "baseUrl",
@@ -349,6 +536,26 @@
     {
       "key": "collection_game_id",
       "value": "1"
+    },
+    {
+      "key": "username",
+      "value": "testuser"
+    },
+    {
+      "key": "email",
+      "value": "testuser@example.com"
+    },
+    {
+      "key": "password",
+      "value": "Str0ngPassw0rd!"
+    },
+    {
+      "key": "access",
+      "value": ""
+    },
+    {
+      "key": "refresh",
+      "value": ""
     }
   ]
 }
