@@ -1,8 +1,9 @@
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.exceptions import APIException, NotFound, ValidationError
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.exceptions import APIException, NotFound, \
+    ValidationError, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,7 +20,14 @@ from .serializers import (
 from .steam import fetch_app_details, fetch_game, search_games
 
 
+def check_can_edit(user, collection):
+    if user != collection.author and not user.is_staff:
+        raise PermissionDenied("You don't have access to this resource.",
+                               "permission_denied")
+
 class SteamSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         term = request.query_params.get("search", "").strip()
         if not term:
@@ -28,8 +36,6 @@ class SteamSearchView(APIView):
 
 
 class CollectionListView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
     def get(self, request):
         games = (
             CollectionGame.objects.select_related("game")
@@ -55,7 +61,7 @@ class CollectionListView(APIView):
     def post(self, request):
         serializer = CollectionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(author=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -77,6 +83,7 @@ class CollectionDetailView(APIView):
 
     def delete(self, request, collection_id):
         collection = get_object_or_404(Collection, id=collection_id)
+        check_can_edit(request.user, collection)
         games_ids = [collection_game.game.id for collection_game
                  in CollectionGame.objects.filter(collection_id=collection_id)]
         collection.delete()
@@ -85,6 +92,7 @@ class CollectionDetailView(APIView):
 
     def patch(self, request, collection_id):
         collection = get_object_or_404(Collection, id=collection_id)
+        check_can_edit(request.user, collection)
         serializer = CollectionUpdateSerializer(
             collection, data=request.data, partial=True
         )
@@ -124,6 +132,7 @@ class GameDetailView(APIView):
 class CollectionGameView(APIView):
     def post(self, request, collection_id):
         collection = get_object_or_404(Collection, id=collection_id)
+        check_can_edit(request.user, collection)
         serializer = AddGameSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         steam_id = serializer.validated_data["steam_id"]
@@ -136,7 +145,7 @@ class CollectionGameView(APIView):
             game, _ = Game.objects.get_or_create(steam_id=steam_id, defaults=game_data)
 
         _, created = CollectionGame.objects.get_or_create(
-            collection=collection, game=game
+            collection=collection, game=game,
         )
         if not created:
             raise ConflictError(
@@ -152,6 +161,7 @@ class CollectionGameDetailView(APIView):
         collection_game = get_object_or_404(
             CollectionGame, collection_id=collection_id, game__steam_id=steam_id
         )
+        check_can_edit(request.user, collection_game.collection)
         game = collection_game.game
         collection_game.delete()
 

@@ -48,7 +48,8 @@ class CollectionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ["id", "title", "genre", "description", "created_at", "games"]
+        fields = ["id", "title", "genre", "description", "created_at", "games", "author"]
+        read_only_fields = ["created_at", "author"]
 
 
 class CollectionUpdateSerializer(serializers.ModelSerializer):
