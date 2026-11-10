@@ -75,10 +75,10 @@ class CollectionDetailView(APIView):
         collection = get_object_or_404(
             Collection.objects.prefetch_related(
                 Prefetch("collection_games", queryset=games)
-            ),
+            ).select_related("author"),
             id=collection_id,
         )
-        serializer = CollectionDetailSerializer(collection)
+        serializer = CollectionDetailSerializer(collection, context={"request": request})
         return Response(serializer.data)
 
     def delete(self, request, collection_id):
