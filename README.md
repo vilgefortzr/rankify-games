@@ -53,6 +53,37 @@ Each game page shows a short description from the public Steam API. Searching fo
 
    The API is available at `http://localhost:8000/api/v1/`.
 
+### Running Tests
+
+Tests use pytest with pytest-django; the configuration is in `pytest.ini` and `.coveragerc`. Run the commands from the project root with the virtual environment activated:
+
+```bash
+# run all tests
+pytest
+
+# run one file or one test
+pytest rankify/tests/test_collections.py
+pytest rankify/tests/test_votes.py::TestVote::test_user_can_vote
+
+# run tests with a coverage report in the terminal
+pytest --cov
+
+# HTML coverage report (open htmlcov/index.html)
+pytest --cov --cov-report=html
+```
+
+Tests create a separate temporary database, so `db.sqlite3` is never touched. The Steam API is never called: network access is disabled in tests and Steam responses are mocked.
+
+| File                                | What is tested                                                                 |
+|-------------------------------------|--------------------------------------------------------------------------------|
+| `conftest.py`                       | Shared fixtures: users (author, other user, admin), JWT clients, collections, games, votes |
+| `rankify/tests/test_collections.py` | Collections CRUD: public read, create (`401` for anonymous), edit/delete by author or admin only (`403`), validation (`400`), `404` |
+| `rankify/tests/test_votes.py`       | Voting: one vote per collection (`409`), removing only your own vote, `401`, `404` |
+| `rankify/tests/test_games.py`       | Adding/removing games in a collection, games catalogue, Steam search, Steam errors (`503`) |
+| `rankify/tests/test_steam.py`       | Steam API client with a fake HTTP layer                                        |
+| `rankify/tests/test_models.py`      | Model string representations                                                   |
+| `users/tests/test_auth.py`          | Registration validation, JWT login and refresh, `/auth/me/`                    |
+
 ### Frontend
 
 1. Install Node dependencies:
