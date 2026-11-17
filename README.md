@@ -39,19 +39,52 @@ Each game page shows a short description from the public Steam API. Searching fo
    pip install -r requirements.txt
    ```
 
-3. Apply database migrations:
+3. Create the `.env` file with environment variables from the template:
+
+   ```bash
+   # Linux / macOS
+   cp .env.example .env
+
+   # Windows
+   copy .env.example .env
+   ```
+
+   Then set your own `SECRET_KEY` in `.env`. Generate one with:
+
+   ```bash
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   ```
+
+   `.env` holds secrets and is listed in `.gitignore`, so it is never committed. See [Environment Variables](#environment-variables).
+
+4. Apply database migrations:
 
    ```bash
    python manage.py migrate
    ```
 
-4. Start the development server:
+5. Start the development server:
 
    ```bash
    python manage.py runserver
    ```
 
    The API is available at `http://localhost:8000/api/v1/`.
+
+### Environment Variables
+
+Settings that are secret or differ between environments are read from `.env` (or from real environment variables, which take priority) with `python-decouple`. `.env.example` lists them all with safe placeholder values.
+
+| Variable                        | Required | Default                                                            | Description                                      |
+|---------------------------------|----------|--------------------------------------------------------------------|--------------------------------------------------|
+| `SECRET_KEY`                    | yes      | —                                                                  | Django secret key; the server does not start without it |
+| `DEBUG`                         | no       | `True`                                                            | `True` for local development only                |
+| `ALLOWED_HOSTS`                 | no       | `localhost,127.0.0.1`                                              | Comma-separated hosts the server answers to      |
+| `CORS_ALLOWED_ORIGINS`          | no       | `http://localhost:5173,http://localhost:3000,http://127.0.0.1:3000` | Comma-separated frontend origins                 |
+| `DATABASE_NAME`                 | no       | `db.sqlite3`                                                       | SQLite database file in the project root         |
+| `ACCESS_TOKEN_LIFETIME_MINUTES` | no       | `5`                                                                | JWT access token lifetime                        |
+| `REFRESH_TOKEN_LIFETIME_DAYS`   | no       | `1`                                                                | JWT refresh token lifetime                       |
+| `LOG_LEVEL`                     | no       | `INFO`                                                             | Log level of the project code: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ### Frontend
 
@@ -70,6 +103,57 @@ Each game page shows a short description from the public Steam API. Searching fo
    The app is available at `http://localhost:5173/`.
 
 ---
+
+### Running Tests
+
+Tests use pytest with pytest-django; the configuration is in `pytest.ini` and `.coveragerc`. Run the commands from the project root with the virtual environment activated:
+
+```bash
+# run all tests
+pytest
+
+# run one file or one test
+pytest rankify/tests/test_collections.py
+pytest rankify/tests/test_votes.py::TestVote::test_user_can_vote
+
+# run tests with a coverage report in the terminal
+pytest --cov
+
+# HTML coverage report (open htmlcov/index.html)
+pytest --cov --cov-report=html
+```
+
+Tests create a separate temporary database, so `db.sqlite3` is never touched. The Steam API is never called: network access is disabled in tests and Steam responses are mocked.
+
+| File                                | What is tested                                                                 |
+|-------------------------------------|--------------------------------------------------------------------------------|
+| `conftest.py`                       | Shared fixtures: users (author, other user, admin), JWT clients, collections, games, votes |
+| `rankify/tests/test_collections.py` | Collections CRUD: public read, create (`401` for anonymous), edit/delete by author or admin only (`403`), validation (`400`), `404` |
+| `rankify/tests/test_votes.py`       | Voting: one vote per collection (`409`), removing only your own vote, `401`, `404` |
+| `rankify/tests/test_games.py`       | Adding/removing games in a collection, games catalogue, Steam search, Steam errors (`503`) |
+| `rankify/tests/test_steam.py`       | Steam API client with a fake HTTP layer                                        |
+| `rankify/tests/test_models.py`      | Model string representations                                                   |
+| `users/tests/test_auth.py`          | Registration validation, JWT login and refresh, `/auth/me/`                    |
+
+### Logging
+
+Logs are written to the console (the `LOGGING` setting in `config/settings.py`) in the format `time level logger: message`, for example:
+
+```text
+2026-11-17 12:32:50,017 INFO    rankify.views: User 1 created collection 7
+2026-11-17 12:32:50,022 WARNING rankify.views: User 2 was denied editing collection 7
+2026-11-17 12:32:50,031 WARNING rankify.steam: Steam request to https://store.steampowered.com/api/appdetails failed: offline
+```
+
+| Level     | What is logged                                                                                     |
+|-----------|----------------------------------------------------------------------------------------------------|
+| `DEBUG`   | Every request to the Steam API (URL and parameters); shown only with `LOG_LEVEL=DEBUG` in `.env`    |
+| `INFO`    | User registered; collection created / updated / deleted; game added / removed; vote added / removed; game loaded from Steam |
+| `WARNING` | User denied editing someone else's collection; Steam API unavailable; Django logs every `4xx` response (`django.request`) |
+| `ERROR`   | Unhandled errors with the traceback; Django logs every `5xx` response                             |
+
+Logs contain only ids and usernames: passwords, tokens and emails are never logged.
+
 
 ## Database Schema
 
@@ -90,6 +174,29 @@ A game's vote count in a collection is the number of `Vote` rows for its `Collec
 
 All data is exchanged as JSON. Base URL: `/api/v1`.
 
+---
+
+### API Documentation
+
+Interactive documentation is generated automatically from the code with `drf-spectacular`. Start the server (`python manage.py runserver`) and open:
+
+| Page            | URL                                    |
+|-----------------|----------------------------------------|
+| Swagger UI      | http://localhost:8000/api/docs/        |
+| OpenAPI schema  | http://localhost:8000/api/schema/      |
+
+In Swagger UI, call `POST /api/v1/auth/login/`, click **Authorize** and paste the `access` token to try protected endpoints.
+
+To get the OpenAPI schema as a file:
+
+```bash
+# from the running server (YAML; add ?format=json for JSON)
+curl http://localhost:8000/api/schema/ -o schema.yml
+
+# without running the server
+python manage.py spectacular --file schema.yml
+```
+---
 **Access**: Public = anyone; User = a valid access token is required; Author / Admin = the collection's author or a user with `is_staff = true`.
 
 ### Collections
