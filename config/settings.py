@@ -113,6 +113,33 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
+# Logging
+# https://docs.djangoproject.com/en/6.1/topics/logging/
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname:<7} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django": {"level": "INFO"},
+        "rankify": {"level": "INFO"},
+        "users": {"level": "INFO"},
+    },
+}
+
+
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 

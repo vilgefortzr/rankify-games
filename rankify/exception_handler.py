@@ -1,6 +1,10 @@
+import logging
+
 from rest_framework import status
 from rest_framework.exceptions import APIException, ErrorDetail
 from rest_framework.views import exception_handler
+
+logger = logging.getLogger(__name__)
 
 
 class ConflictError(APIException):
@@ -29,6 +33,9 @@ def error_body(status_code, code, message, details=None):
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
     if response is None:
+        logger.error(
+            "Unhandled error in %s", context["view"].__class__.__name__, exc_info=exc
+        )
         return None
 
     data = response.data

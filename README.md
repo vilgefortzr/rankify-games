@@ -53,6 +53,24 @@ Each game page shows a short description from the public Steam API. Searching fo
 
    The API is available at `http://localhost:8000/api/v1/`.
 
+### Frontend
+
+1. Install Node dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   The app is available at `http://localhost:5173/`.
+
+---
+
 ### Running Tests
 
 Tests use pytest with pytest-django; the configuration is in `pytest.ini` and `.coveragerc`. Run the commands from the project root with the virtual environment activated:
@@ -84,23 +102,25 @@ Tests create a separate temporary database, so `db.sqlite3` is never touched. Th
 | `rankify/tests/test_models.py`      | Model string representations                                                   |
 | `users/tests/test_auth.py`          | Registration validation, JWT login and refresh, `/auth/me/`                    |
 
-### Frontend
+### Logging
 
-1. Install Node dependencies:
+Logs are written to the console (the `LOGGING` setting in `config/settings.py`) in the format `time level logger: message`, for example:
 
-   ```bash
-   npm install
-   ```
+```text
+2026-11-17 12:32:50,017 INFO    rankify.views: User 1 created collection 7
+2026-11-17 12:32:50,022 WARNING rankify.views: User 2 was denied editing collection 7
+2026-11-17 12:32:50,031 WARNING rankify.steam: Steam request to https://store.steampowered.com/api/appdetails failed: offline
+```
 
-2. Start the development server:
+| Level     | What is logged                                                                                     |
+|-----------|----------------------------------------------------------------------------------------------------|
+| `DEBUG`   | Every request to the Steam API (URL and parameters); hidden by default, the level is `INFO`         |
+| `INFO`    | User registered; collection created / updated / deleted; game added / removed; vote added / removed; game loaded from Steam |
+| `WARNING` | User denied editing someone else's collection; Steam API unavailable; Django logs every `4xx` response (`django.request`) |
+| `ERROR`   | Unhandled errors with the traceback; Django logs every `5xx` response                             |
 
-   ```bash
-   npm run dev
-   ```
+Logs contain only ids and usernames: passwords, tokens and emails are never logged.
 
-   The app is available at `http://localhost:5173/`.
-
----
 
 ## Database Schema
 
@@ -121,9 +141,11 @@ A game's vote count in a collection is the number of `Vote` rows for its `Collec
 
 All data is exchanged as JSON. Base URL: `/api/v1`.
 
+---
+
 ### API Documentation
 
-Interactive documentation is generated automatically from the code with [drf-spectacular](https://drf-spectacular.readthedocs.io/) (OpenAPI 3). Start the server (`python manage.py runserver`) and open:
+Interactive documentation is generated automatically from the code with `drf-spectacular`. Start the server (`python manage.py runserver`) and open:
 
 | Page            | URL                                    |
 |-----------------|----------------------------------------|
@@ -141,7 +163,7 @@ curl http://localhost:8000/api/schema/ -o schema.yml
 # without running the server
 python manage.py spectacular --file schema.yml
 ```
-
+---
 **Access**: Public = anyone; User = a valid access token is required; Author / Admin = the collection's author or a user with `is_staff = true`.
 
 ### Collections

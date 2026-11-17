@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -19,9 +21,14 @@ from .serializers import (
 )
 from .steam import fetch_app_details, fetch_game, search_games
 
+logger = logging.getLogger(__name__)
+
 
 def check_can_edit(user, collection):
     if user != collection.author and not user.is_staff:
+        logger.warning(
+            "User %s was denied editing collection %s", user.id, collection.id
+        )
         raise PermissionDenied("You don't have access to this resource.",
                                "permission_denied")
 
@@ -61,7 +68,8 @@ class CollectionListView(APIView):
     def post(self, request):
         serializer = CollectionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(author=request.user)
+        collection = serializer.save(author=request.user)
+        logger.info("User %s created collection %s", request.user.id, collection.id)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -88,6 +96,7 @@ class CollectionDetailView(APIView):
                  in CollectionGame.objects.filter(collection_id=collection_id)]
         collection.delete()
         Game.objects.filter(id__in=games_ids, in_collections__isnull=True).delete()
+        logger.info("User %s deleted collection %s", request.user.id, collection_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, collection_id):
@@ -98,6 +107,12 @@ class CollectionDetailView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        logger.info(
+            "User %s updated collection %s: %s",
+            request.user.id,
+            collection_id,
+            ", ".join(serializer.validated_data),
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -125,6 +140,7 @@ class GameDetailView(APIView):
         try:
             data["steam"] = fetch_app_details(steam_id)
         except APIException:
+            logger.warning("Showing game %s without Steam details", steam_id)
             data["steam"] = None
         return Response(data)
 
@@ -141,8 +157,10 @@ class CollectionGameView(APIView):
         if game is None:
             game_data = fetch_game(steam_id)
             if game_data is None:
+                logger.info("Game %s not found on Steam", steam_id)
                 raise NotFound("Game not found on Steam.", code="game_not_found")
             game, _ = Game.objects.get_or_create(steam_id=steam_id, defaults=game_data)
+            logger.info("Loaded game %s (%s) from Steam", steam_id, game.title)
 
         _, created = CollectionGame.objects.get_or_create(
             collection=collection, game=game,
@@ -153,6 +171,12 @@ class CollectionGameView(APIView):
                 code="game_already_in_collection",
             )
 
+        logger.info(
+            "User %s added game %s to collection %s",
+            request.user.id,
+            steam_id,
+            collection_id,
+        )
         return Response(GameSerializer(game).data, status=status.HTTP_201_CREATED)
 
 
@@ -164,9 +188,16 @@ class CollectionGameDetailView(APIView):
         check_can_edit(request.user, collection_game.collection)
         game = collection_game.game
         collection_game.delete()
+        logger.info(
+            "User %s removed game %s from collection %s",
+            request.user.id,
+            steam_id,
+            collection_id,
+        )
 
         if not CollectionGame.objects.filter(game=game).exists():
             game.delete()
+            logger.info("Deleted game %s: it is not in any collection", steam_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -183,6 +214,12 @@ class VoteView(APIView):
                 code="vote_exists",
             )
         Vote.objects.create(collection_game=collection_game, author=request.user)
+        logger.info(
+            "User %s voted for game %s in collection %s",
+            request.user.id,
+            collection_game.game.steam_id,
+            collection_id,
+        )
         votes_count = collection_game.votes.count()
         return Response(
             {
@@ -197,4 +234,7 @@ class VoteView(APIView):
                                    collection_game__collection_id=collection_id,
                                    author=request.user)
         vote.delete()
+        logger.info(
+            "User %s removed their vote in collection %s", request.user.id, collection_id
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)

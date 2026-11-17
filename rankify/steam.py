@@ -1,8 +1,11 @@
 import html
+import logging
 
 import requests
 
 from .exception_handler import SteamUnavailableError
+
+logger = logging.getLogger(__name__)
 
 APPDETAILS_URL = "https://store.steampowered.com/api/appdetails"
 TIMEOUT = 5
@@ -16,14 +19,17 @@ LANGUAGE = "english"
 
 
 def _get_json(url, params):
+    logger.debug("Steam request: %s %s", url, params)
     try:
         response = requests.get(url, params=params, timeout=TIMEOUT)
         response.raise_for_status()
         payload = response.json()
     except (requests.RequestException, ValueError) as exc:
+        logger.warning("Steam request to %s failed: %s", url, exc)
         raise SteamUnavailableError() from exc
 
     if not isinstance(payload, dict):
+        logger.warning("Steam returned unexpected data from %s", url)
         raise SteamUnavailableError()
     return payload
 
