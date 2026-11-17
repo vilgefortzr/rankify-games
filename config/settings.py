@@ -35,7 +35,25 @@ ALLOWED_HOSTS = []
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "rankify.exception_handler.custom_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"]
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "RankifyGames API",
+    "DESCRIPTION": (
+        "REST API for RankifyGames: themed game collections that users vote on.\n\n"
+        "**Authentication**: JWT. Get tokens from `POST /api/v1/auth/login/`, then "
+        "click **Authorize** and paste the `access` token. Requests send it as "
+        "`Authorization: Bearer <access>`.\n\n"
+        "**Errors** use one format: "
+        '`{ "error": { "status", "code", "message", "details" } }`; '
+        "`details` holds field errors for `400`."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api/v1",
 }
 
 INSTALLED_APPS = [
@@ -47,6 +65,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "drf_spectacular",
     "rankify",
     "users",
 ]

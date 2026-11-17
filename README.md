@@ -121,6 +121,27 @@ A game's vote count in a collection is the number of `Vote` rows for its `Collec
 
 All data is exchanged as JSON. Base URL: `/api/v1`.
 
+### API Documentation
+
+Interactive documentation is generated automatically from the code with [drf-spectacular](https://drf-spectacular.readthedocs.io/) (OpenAPI 3). Start the server (`python manage.py runserver`) and open:
+
+| Page            | URL                                    |
+|-----------------|----------------------------------------|
+| Swagger UI      | http://localhost:8000/api/docs/        |
+| OpenAPI schema  | http://localhost:8000/api/schema/      |
+
+In Swagger UI, call `POST /api/v1/auth/login/`, click **Authorize** and paste the `access` token to try protected endpoints.
+
+To get the OpenAPI schema as a file:
+
+```bash
+# from the running server (YAML; add ?format=json for JSON)
+curl http://localhost:8000/api/schema/ -o schema.yml
+
+# without running the server
+python manage.py spectacular --file schema.yml
+```
+
 **Access**: Public = anyone; User = a valid access token is required; Author / Admin = the collection's author or a user with `is_staff = true`.
 
 ### Collections
